@@ -1,0 +1,243 @@
+Unpack Creideiki's / my VMS set to a directory of your choice.
+
+Edit vax780.ini / vax750.ini, enable tape drive TS and attach your tape image file:
+(I strongly recommend to use that type of tape drive to avoid problems that the other simh tape drives show every now and then.)
+
+SET TS ENA
+ATT TS <whatever-your-tape-image-file-name-is>
+
+Save the ini file.
+
+Boot the system disk:
+
+BOOT RQ0 (my set)
+resp.
+BOOT RP0 (Creideiki's set)
+
+Log in as SYSTEM
+
+Password
+manager044 (my set)
+resp.
+digital1977 (Creideiki's set)
+
+You should get the DCL prompt now.
+
+I show you how to proceed using a sample tape image containing VAX C.
+
+I will list the DCL prompt ("$") with every command, you do not have to type it though.
+But if you do type it by mistake, it is no problem either. 
+
+1) Mount the tape (image): 
+
+$ MOUNT/OVER=ID MSA0:
+%MOUNT-I-MOUNTED, VAXC02 mounted on _MSA0:
+
+2) See what's on the tape:
+$ DIR MSA0:
+
+Directory MSA0:<>
+
+VAXC024.A;1         VAXC024.B;1         
+
+Total of 2 files.
+
+3) To restore the saveset contents from tape directly, unmount the tape without unloading:
+   (There is an alternative method - see item 16) below)
+ 
+$ DISMOUNT/NOUNLOAD MSA0:
+
+4) Mount the tape "foreign" (needed for BACKUP access):
+$ MOUNT/FOREIGN MSA0:
+%MOUNT-I-MOUNTED, VAXC02 mounted on _MSA0:
+
+5) See what's inside saveset file VAXC024.A (use file name you got from the DIR command above one by one).
+   (You may get an error message if the file is not a BACKUP saveset file):
+$ BACKUP/LIST MSA0:VAXC024.A
+Listing of save set(s)
+
+Save set:          VAXC024.A
+Written by:        BENOIT      
+UIC:               [000312,000002]
+Date:              29-MAR-1988 15:13:32.30
+Command:           BACKUP/COMMENT=VAX C Binary Kit/INTERCHANGE/LOG/VERIFY/NOASSIS KITINSTAL.COM,VAXC024.RELEASE_NOTES HIYALL$MUA0:VA
+XC024.A/IGNORE=LABEL/SAVE/REWIND
+Operating system:  VAX/VMS version T5.0
+BACKUP version:    V5.0
+CPU ID register:   08000000
+Node name:         _HIYALL::
+Written on:        _HIYALL$MUA0:
+Block size:        8192
+Group size:        10
+Buffer count:      3
+
+[C.CAPTURE.MAINT]KITINSTAL.COM;1                           38  14-MAR-1988 12:38
+[C.CAPTURE.MAINT]VAXC024.RELEASE_NOTES;1                   16  15-MAR-1988 22:22
+
+Total of 2 files, 54 blocks
+End of save set
+
+6) See what's inside the next saveset file (until all files are explored): 
+$ BACKUP/LIST MSA0:VAXC024.B
+Listing of save set(s)
+
+Save set:          VAXC024.B
+Written by:        BENOIT      
+UIC:               [000312,000002]
+Date:              29-MAR-1988 15:15:20.77
+Command:           BACKUP/COMMENT=VAX C Binary Kit/INTERCHANGE/LOG/VERIFY/NOASSIS VAXCKITSRC.TLB,VAXCKITEXE.TLB,VAXCDEF.TLB HIYALL$M
+UA0:VAXC024.B/IGNORE=LABEL/SAVE
+Operating system:  VAX/VMS version T5.0
+BACKUP version:    V5.0
+CPU ID register:   08000000
+Node name:         _HIYALL::
+Written on:        _HIYALL$MUA0:
+Block size:        8192
+Group size:        10
+Buffer count:      3
+
+[C.CAPTURE.MAINT]VAXCKITSRC.TLB;2                         388  15-MAR-1988 22:25
+[C.CAPTURE.MAINT]VAXCKITEXE.TLB;2                         775  15-MAR-1988 22:25
+[C.CAPTURE.MAINT]VAXCDEF.TLB;6                            687  15-MAR-1988 16:53
+
+Total of 3 files, 1850 blocks
+End of save set
+
+7) Unmount the tape without unloading:
+$ DISMOUNT/NOUNLOAD MSA0:
+
+8) Mount the tape "foreign" again for the restore process:
+$ MOUNT/FOREIGN MSA0:
+%MOUNT-I-MOUNTED, VAXC02 mounted on _MSA0:
+$ 
+
+9) Temporarily exit to the simh prompt and prepare a disk image file to take the files from the restore.
+   I usually use RK07 disk images for small to medium size data.
+   But you can use any other disk device as well. 
+Simulation stopped, PC: 80008B1F (BRB 80008B1F)
+sim> SET HK ENABLE
+sim> SET HK0 RK07
+sim> ATT HK0 CHAOSTAPE_1.RK7
+%SIM-INFO: HK0: Creating new file: CHAOSTAPE_1.RK7
+Overwrite last track? [N]Y
+
+10) Get back to VMS:
+sim> c
+
+11) Intialize the new data disk:
+$ INIT DMA0: CHAOS1
+
+12) Mount the new data disk:
+$ MOUNT DMA0: CHAOS1
+%MOUNT-I-MOUNTED, CHAOS1       mounted on _DMA0:
+
+13) See what's in the top directory of the new data disk (VMS minium disk files):
+$ dir DMA0:[000000]
+
+Directory DMA0:[000000]
+
+000000.DIR;1        BACKUP.SYS;1        BADBLK.SYS;1        BADLOG.SYS;1       
+BITMAP.SYS;1        CONTIN.SYS;1        CORIMG.SYS;1        INDEXF.SYS;1       
+VOLSET.SYS;1        
+
+Total of 9 files.
+
+14) Restore one saveset file after another, in the order that was displayed with the DIR command:
+$ BACKUP/LOG/VERIFY MSA0:VAXC024.A DMA0:[*]
+
+%BACKUP-S-CREDIR, created directory DMA0:[C.CAPTURE.MAINT]
+%BACKUP-S-CREATED, created DMA0:[C.CAPTURE.MAINT]KITINSTAL.COM;1
+%BACKUP-S-CREATED, created DMA0:[C.CAPTURE.MAINT]VAXC024.RELEASE_NOTES;1
+%BACKUP-I-STARTVERIFY, starting verification pass
+%BACKUP-S-COMPARED, compared DMA0:[C.CAPTURE.MAINT]KITINSTAL.COM;1
+%BACKUP-S-COMPARED, compared DMA0:[C.CAPTURE.MAINT]VAXC024.RELEASE_NOTES;1
+
+Make sure to specify the data disk name (DMA0:) and the special directory specifier ([*]), that will make BACKUP restore the original directory structure to your data disk.
+
+15) Restore the next saveset file:
+$ BACKUP/LOG/VERIFY MSA0:VAXC024.B DMA0:[*]
+
+You are done now, just clean up and shut down orderly, see item 18)
+
+16) Alternative method - copy saveset files to disk first and restore from there.
+    Continue after item 2), do not UNMOUNT!
+    
+$ COPY/LOG MSA0:*.* DMA0:[000000]     
+%COPY-S-COPIED, MSA0:<>VAXC024.A;1 copied to DMA0:<000000>VAXC024.A;1 (5 records)
+%COPY-S-COPIED, MSA0:<>VAXC024.B;1 copied to DMA0:<000000>VAXC024.B;1 (137 records)
+%COPY-S-NEWFILES, 2 files created
+
+17) Restore one saveset file after another from disk, the order does not matter,
+    mind the /SAV after the saveset file name:
+$ BACKUP/LOG/VERIFY DMA0:[000000]VAXC024.A/SAV DMA0:[*]
+
+%BACKUP-S-CREDIR, created directory DMA0:[C.CAPTURE.MAINT]
+%BACKUP-S-CREATED, created DMA0:[C.CAPTURE.MAINT]KITINSTAL.COM;1
+%BACKUP-S-CREATED, created DMA0:[C.CAPTURE.MAINT]VAXC024.RELEASE_NOTES;1
+%BACKUP-I-STARTVERIFY, starting verification pass
+%BACKUP-S-COMPARED, compared DMA0:[C.CAPTURE.MAINT]KITINSTAL.COM;1
+%BACKUP-S-COMPARED, compared DMA0:[C.CAPTURE.MAINT]VAXC024.RELEASE_NOTES;1
+ 
+18) Shut down VMS; answer all questions with <Enter>:
+    (If you decide to handle the data disk image file before shutting VMS down,
+    dismount it first before: $ DISMOUNT DMA0: )
+
+$ @SYS$SYSTEM:SHUTDOWN
+
+
+        SHUTDOWN -- Perform an Orderly System Shutdown
+
+How many minutes until final shutdown [0]:
+Reason for shutdown [Standalone]: 
+Do you want to spin down the disk volumes [NO]? 
+Do you want to invoke the site-specific shutdown procedure [YES]? 
+Should an automatic system reboot be performed [NO]? 
+When will the system be rebooted [later]: 
+Shutdown options (enter as a comma-separated list):
+ REBOOT_CHECK        Check existence of basic system files
+
+Shutdown options [NONE]: 
+
+%SHUTDOWN-I-OPERATOR, This terminal is now an operator's console.
+%%%%%%%%%%%  OPCOM  12-JUL-2024 17:25:49.20  %%%%%%%%%%%
+Operator status for operator _OPA0:
+CENTRAL, PRINTER, TAPES, DISKS, DEVICES, CARDS, NETWORK, CLUSTER, SECURITY,
+OPER1, OPER2, OPER3, OPER4, OPER5, OPER6, OPER7, OPER8, OPER9, OPER10, OPER11,
+OPER12
+
+%SHUTDOWN-I-DISLOGINS, Interactive logins will now be disabled.
+%SET-I-INTSET, login interactive limit = 0, current interactive value = 1
+%SHUTDOWN-I-STOPQUEMAN, The queue manager will now be stopped.
+%JBC-E-JOBQUEDIS, system job queue manager is not running
+
+SHUTDOWN message from user SYSTEM at _OPA0:   17:25:49
+The system will shut down in 0 minutes; back up later.  Please log off.
+Standalone
+
+1 terminal has been notified.
+
+%SHUTDOWN-I-SITESHUT, The site-specific shutdown procedure will now be invoked.
+%SHUTDOWN-I-STOPUSER, All user processes will now be stopped.
+%SHUTDOWN-I-REMOVE, All installed images will now be removed.
+%SHUTDOWN-I-DISMOUNT, All volumes will now be dismounted.
+%SHUTDOWN-I-DISMOUNTDEV, Dismounting device _DMA0:.
+%SHUTDOWN-I-DISMOUNTDEV, Dismounting device _DMA2:.
+%%%%%%%%%%%  OPCOM  12-JUL-2024 17:25:49.42  %%%%%%%%%%%
+Message from user SYSTEM
+_OPA0:, The system shutdown was requested by the operator.
+
+%%%%%%%%%%%  OPCOM  12-JUL-2024 17:25:49.44  %%%%%%%%%%%
+Logfile was closed by operator _OPA0:
+Logfile was SYS$SYSROOT:[SYSMGR]OPERATOR.LOG;4
+
+%%%%%%%%%%%  OPCOM  12-JUL-2024 17:25:49.44  %%%%%%%%%%%
+Operator _OPA0: has been disabled, username SYSTEM
+
+        SYSTEM SHUTDOWN COMPLETE - USE CONSOLE TO HALT SYSTEM
+Infinite loop, PC: 80008D7E (BRB 80008D7E)
+sim> EXIT
+Goodbye
+Log file closed
+ulli@think12:~/gunkies.org/CHAOSnet/Testbed CHAOSnet V6.0$ 
+
+
