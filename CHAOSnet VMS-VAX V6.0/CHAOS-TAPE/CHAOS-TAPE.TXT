@@ -1,0 +1,6 @@
+This directory contains the restored distribution SIMH tape image of the CHAOSnet VMS/VAX V6.0 software.
+It has been designed to be as similar as possible to the original installation tape.
+
+Use the instructions in file "Install CHAOSnet VMS-VAX V6.0 from tape.txt" to restore CHAOSnet VMS/VAX to a disk of your choice.
+
+I recommend using the SIMH tape type "TS" (which is MSA0: in VMS), as it is (at least in my opinion) the most reliable tape drive simulation availble for SIMH VAX and PDP-11 simulators. 
