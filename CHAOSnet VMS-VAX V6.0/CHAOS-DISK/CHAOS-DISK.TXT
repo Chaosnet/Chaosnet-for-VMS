@@ -1,0 +1,4 @@
+This directory contains the restored distribution SIMH disk image of the CHAOSnet VMS/VAX V6.0 software.
+It has been designed to be as similar as possible to the original disk.
+
+Use the instructions in file "Install CHAOSnet VMS-VAX V6.0 from disk.txt".
